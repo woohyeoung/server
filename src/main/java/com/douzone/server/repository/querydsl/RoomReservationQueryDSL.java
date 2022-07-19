@@ -83,13 +83,13 @@ public class RoomReservationQueryDSL {
 								meetingRoom.roomNo,
 								meetingRoom.capacity,
 								meetingRoom.modifiedAt,
-								meetingRoom.id.count().as("count"),
-								roomReservation.startedAt.hour().as("hour")
+								roomReservation.modifiedAt.hour().count().as("count"),
+								roomReservation.modifiedAt.hour().as("hour")
 						))
 				.from(roomReservation).innerJoin(roomReservation.meetingRoom, meetingRoom)
 				.where(roomReservation.modifiedAt.lt(now).and(roomReservation.modifiedAt.gt(nowMinusWeek)))
-				.groupBy(roomReservation.startedAt.hour())
-				.orderBy(roomReservation.startedAt.hour().asc()).fetch();
+				.groupBy(roomReservation.modifiedAt.hour(),meetingRoom.id)
+				.orderBy(roomReservation.modifiedAt.hour().asc()).fetch();
 	}
 
 	public List<WeekCountHourResDTO> findByWeekAndMonthMeetingCountHour(LocalDateTime now, LocalDateTime nowMinusWeek) {
@@ -101,12 +101,12 @@ public class RoomReservationQueryDSL {
 								meetingRoom.roomNo,
 								meetingRoom.capacity,
 								meetingRoom.modifiedAt,
-								meetingRoom.id.count().as("count"),
+								roomReservation.startedAt.hour().count().as("count"),
 								roomReservation.startedAt.hour().as("hour")
 						))
 				.from(roomReservation).innerJoin(roomReservation.meetingRoom, meetingRoom)
 				.where(roomReservation.startedAt.lt(now).and(roomReservation.startedAt.gt(nowMinusWeek)))
-				.groupBy(roomReservation.startedAt.hour())
+				.groupBy(roomReservation.startedAt.hour(),meetingRoom.id)
 				.orderBy(roomReservation.startedAt.hour().asc()).fetch();
 	}
 }

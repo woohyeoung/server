@@ -288,13 +288,21 @@ public class RoomService {
 			return reservationResDTO;
 		}).collect(Collectors.toList());
 	}
+	@Transactional
+	public List<RoomCountResDTO> selectByDateRoomReservation_2(String startTime, String endTime) {
+		return roomQueryDSL.selectDateTimeReservation2(startTime, endTime);
+	}
 
 	@Transactional
 	public List<RoomResDTO> selectByLimitBookmark(int limit) {
 		List<RoomBookmarkResDTO> roomBookmarkResDTOList = roomQueryDSL.selectTop3BookmarkMeetingRoom(limit);
 		return roomServiceMethod.RoomImgListAndRoomObjectList(roomBookmarkResDTOList);
 	}
-
+@Transactional
+	public List<RoomResDTO> selectByLimitBookmark2(int limit) {
+		List<RoomBookmarkResDTO> roomBookmarkResDTOList = roomQueryDSL.selectTop3BookmarkMeetingRoom(limit);
+		return roomServiceMethod.RoomImgListAndRoomObjectList(roomBookmarkResDTOList);
+	}
 	@Transactional
 	public Long register(List<MultipartFile> files, RoomReqDTO roomReqDTO) {
 		String basePath = "room/";

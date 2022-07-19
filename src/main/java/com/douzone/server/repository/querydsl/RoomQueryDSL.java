@@ -1,8 +1,7 @@
 package com.douzone.server.repository.querydsl;
 
-import com.douzone.server.dto.room.QRoomBookmarkResDTO;
-import com.douzone.server.dto.room.RoomBookmarkResDTO;
-import com.douzone.server.dto.room.RoomReservationSearchDTO;
+import com.douzone.server.dto.room.*;
+import com.douzone.server.entity.QMeetingRoom;
 import com.douzone.server.entity.RoomReservation;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQuery;
@@ -13,9 +12,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.stereotype.Repository;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+
 import static com.douzone.server.entity.QEmployee.employee;
 import static com.douzone.server.entity.QMeetingRoom.meetingRoom;
 import static com.douzone.server.entity.QRoomBookmark.roomBookmark;
@@ -25,18 +26,18 @@ import static com.douzone.server.entity.QVehicleReservation.vehicleReservation;
 @Repository
 @RequiredArgsConstructor
 @Slf4j
-public class RoomQueryDSL{
+public class RoomQueryDSL {
 	private final JPAQueryFactory jpaQueryFactory;
 
 	/**
 	 * 전체 회의실 예약 조회 - 페이징
-	 *  역순 정렬 후
-	 *  lastId(100) -> limit(10)개 조회
-	 *  lastId(90) -> limit(10)개 조회
-	 *   마지막 조회 Id를 받아온다. lastId
+	 * 역순 정렬 후
+	 * lastId(100) -> limit(10)개 조회
+	 * lastId(90) -> limit(10)개 조회
+	 * 마지막 조회 Id를 받아온다. lastId
 	 */
-	public List<RoomReservation> selectAllReservation(){
-		return  jpaQueryFactory
+	public List<RoomReservation> selectAllReservation() {
+		return jpaQueryFactory
 				.select(roomReservation)
 				.from(roomReservation)
 				.join(roomReservation.meetingRoom, meetingRoom).fetchJoin()
@@ -44,52 +45,56 @@ public class RoomQueryDSL{
 				.fetch();
 	}
 
-
-	public List<RoomReservation> selectAllReservationPage(long lastId, int limit){
-		 List<RoomReservation> roomList = jpaQueryFactory
-				.select(roomReservation)
-				.from(roomReservation)
-				.join(roomReservation.meetingRoom, meetingRoom).fetchJoin()
-				.where(roomReservationIdLt(lastId))
-				.orderBy(roomReservation.modifiedAt.desc(),roomReservation.id.desc())//플젝 시작하면 앞에 createdAt정렬을 먼저 해줘야함
-				.limit(limit)
-				.fetch();
-
-		 return roomList;
-	}
-	public List<RoomReservation> selectAllReservationPage2(long page, int limit){
+	public List<RoomReservation> selectAllReservationPage(long lastId, int limit) {
 		List<RoomReservation> roomList = jpaQueryFactory
 				.select(roomReservation)
 				.from(roomReservation)
 				.join(roomReservation.meetingRoom, meetingRoom).fetchJoin()
-				.orderBy(roomReservation.modifiedAt.desc(),roomReservation.id.desc())//플젝 시작하면 앞에 createdAt정렬을 먼저 해줘야함
+				.where(roomReservationIdLt(lastId))
+				.orderBy(roomReservation.modifiedAt.desc(), roomReservation.id.desc())//플젝 시작하면 앞에 createdAt정렬을 먼저 해줘야함
 				.limit(limit)
-				.offset((page-1)*limit)
+				.fetch();
+
+		return roomList;
+	}
+
+	public List<RoomReservation> selectAllReservationPage2(long page, int limit) {
+		List<RoomReservation> roomList = jpaQueryFactory
+				.select(roomReservation)
+				.from(roomReservation)
+				.join(roomReservation.meetingRoom, meetingRoom).fetchJoin()
+				.orderBy(roomReservation.modifiedAt.desc(), roomReservation.id.desc())//플젝 시작하면 앞에 createdAt정렬을 먼저 해줘야함
+				.limit(limit)
+				.offset((page - 1) * limit)
 				.fetch();
 		return roomList;
 	}
+
 	//내거 회의실 예약 조회
-	public List<RoomReservation> selectAllReservationPage(long lastId, int limit, long Id){
+	public List<RoomReservation> selectAllReservationPage(long lastId, int limit, long Id) {
 		List<RoomReservation> roomList = jpaQueryFactory
 				.select(roomReservation)
 				.from(roomReservation)
 				.join(roomReservation.meetingRoom, meetingRoom).fetchJoin()
 				.join(roomReservation.employee, employee).fetchJoin()
 				.where(employee.id.eq(Id), roomReservationIdLt(lastId))
-				.orderBy(roomReservation.modifiedAt.desc(),roomReservation.id.asc())
+				.orderBy(roomReservation.modifiedAt.desc(), roomReservation.id.asc())
 				.limit(limit)
 				.fetch();
 		return roomList;
 	}
+
 	//만약 아무것도 조회 안한 첫 시작이면 null처리돼서 마지막부터 limit개 보여주기
 	private BooleanExpression roomReservationIdLt(long lastId) {
-		return lastId != 0 ? roomReservation.id.lt(lastId): null;
+		return lastId != 0 ? roomReservation.id.lt(lastId) : null;
 	}
+
 	private BooleanExpression roomReservationStartedAtGt(String startedAt) {
-		return startedAt != "" ? roomReservation.startedAt.gt(LocalDateTime.parse(startedAt)): null;
+		return startedAt != "" ? roomReservation.startedAt.gt(LocalDateTime.parse(startedAt)) : null;
 	}
+
 	private BooleanExpression roomReservationCreatedAtLt(String createdAt) {
-		return createdAt != "" ? roomReservation.createdAt.lt(LocalDateTime.parse(createdAt)): null;
+		return createdAt != "" ? roomReservation.createdAt.lt(LocalDateTime.parse(createdAt)) : null;
 	}
 
 	public long countReservation() {
@@ -144,6 +149,27 @@ public class RoomQueryDSL{
 				.where(roomReservation.startedAt.goe(LocalDateTime.parse(startTime))
 						.and(roomReservation.endedAt.loe(LocalDateTime.parse(endTime))))
 				.orderBy(roomReservation.modifiedAt.desc())
+				.fetch();
+	}
+
+	public List<RoomCountResDTO> selectDateTimeReservation2(String startTime, String endTime) {
+		return jpaQueryFactory
+				.select(new QRoomCountResDTO(roomReservation.id,
+						roomReservation.meetingRoom.roomNo,
+						roomReservation.startedAt.month().as("month"),
+						roomReservation.startedAt.dayOfMonth().as("day"),
+						roomReservation.meetingRoom.roomNo.count().as("count"),
+						roomReservation.reason,
+						roomReservation.title,
+						roomReservation.startedAt,
+						roomReservation.endedAt
+				))
+				.from(roomReservation)
+				.join(roomReservation.meetingRoom, meetingRoom)
+				.where(roomReservation.startedAt.goe(LocalDateTime.parse(startTime))
+						.and(roomReservation.endedAt.loe(LocalDateTime.parse(endTime))))
+				.groupBy(meetingRoom.roomNo, roomReservation.startedAt.dayOfMonth())
+				.orderBy(roomReservation.startedAt.asc())
 				.fetch();
 	}
 

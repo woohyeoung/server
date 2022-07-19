@@ -69,6 +69,15 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
 			"order by id desc ")
 	List<IVehicleListResDTO> findByDateTimeReservation(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
 
+	@Query(value = "select vr.id as id,v.name,month(vr.startedAt)as month,day(vr.startedAt) as day,count(v.name)as count, vr.startedAt as startedAt, vr.endedAt as endedAt, " +
+			"vr.createdAt as createdAt, vr.modifiedAt as modifiedAt, " +
+			"vr.reason as reason, vr.title as title " +
+			"from vehicle_reservation vr join vehicle v on vr.vehicleId = v.id " +
+			"where startedAt between :startDate and :endDate group by v.name,day(vr.startedAt)" +
+			"order by vr.startedAt asc ", nativeQuery = true)
+	List<IVehicleListResDTO> findByDateTimeReservation2(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
+
+
 	@Query("select vr.id as id, vr.startedAt as startedAt, vr.endedAt as endedAt, " +
 			"vr.createdAt as createdAt, vr.modifiedAt as modifiedAt, " +
 			"vr.reason as reason, vr.title as title, vr.vehicle as vehicle " +
@@ -87,8 +96,20 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
 			"vr.createdAt as createdAt, vr.modifiedAt as modifiedAt, vr.reason as reason, vr.title as title, " +
 			"vr.vehicle as vehicle, count(vr.vehicle.id) as vcount " +
 			"from VehicleReservation vr " +
-			"where vr.modifiedAt > :date and vr.modifiedAt < :now group by vr.vehicle.id order by vcount desc")
-	List<IVehicleWeekDTO> weekMostReservedVehicle(@Param("now")LocalDateTime now ,@Param("date") LocalDateTime date);
+			"where vr.modifiedAt > :now and vr.modifiedAt < :date group by vr.vehicle.id order by vcount desc")
+	List<IVehicleWeekDTO> weekMostReservedVehicle(@Param("now") LocalDateTime now, @Param("date") LocalDateTime date);
+
+	@Query(value = "select hour(vr.modifiedAt) as hTime, count(hour(vr.modifiedAt)) as hCount, vr.id as reservationId, " +
+			"vr.startedAt as startedAt, vr.endedAt as endedAt, vr.reason as reason, vr.title as title, " +
+			"vr.createdAt as reservationCreatedAt, vr.modifiedAt as reservationModifiedAt, v.id as vId, " +
+			"v.model as model, v.color as color, v.number as vNumber, v.name as vName, v.capacity as capacity, " +
+			"e.empNo as empNo, e.name as eName " +
+			"from vehicle_reservation vr " +
+			"left join vehicle v on v.id = vr.vehicleId " +
+			"left join employee e on e.id = vr.empId " +
+			"where vr.modifiedAt > :start and vr.modifiedAt < :end " +
+			"group by hour(vr.modifiedAt),vr.id order by hour(vr.modifiedAt) asc  ", nativeQuery = true)
+	List<IVehicleWeekTimeDTO> weekMostReservedTime(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
 	@Query(value = "select hour(vr.startedAt) as hTime, count(hour(vr.startedAt)) as hCount, vr.id as reservationId, " +
 			"vr.startedAt as startedAt, vr.endedAt as endedAt, vr.reason as reason, vr.title as title, " +
@@ -99,27 +120,15 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
 			"left join vehicle v on v.id = vr.vehicleId " +
 			"left join employee e on e.id = vr.empId " +
 			"where vr.modifiedAt > :start and vr.modifiedAt < :end " +
-			"group by hour(vr.startedAt) order by hCount desc ", nativeQuery = true)
-	List<IVehicleWeekTimeDTO> weekMostReservedTime(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
-
-		@Query(value = "select hour(vr.startedAt) as hTime, count(hour(vr.startedAt)) as hCount, vr.id as reservationId, " +
-			"vr.startedAt as startedAt, vr.endedAt as endedAt, vr.reason as reason, vr.title as title, " +
-			"vr.createdAt as reservationCreatedAt, vr.modifiedAt as reservationModifiedAt, v.id as vId, " +
-			"v.model as model, v.color as color, v.number as vNumber, v.name as vName, v.capacity as capacity, " +
-			"e.empNo as empNo, e.name as eName " +
-			"from vehicle_reservation vr " +
-			"left join vehicle v on v.id = vr.vehicleId " +
-			"left join employee e on e.id = vr.empId " +
-			"where vr.startedAt > :start and vr.modifiedAt < :end " +
-			"group by hour(vr.startedAt) order by hCount desc ", nativeQuery = true)
+			"group by hour(vr.startedAt),vr.id order by hour(vr.startedAt) asc ", nativeQuery = true)
 	List<IVehicleWeekTimeDTO> weekstartMostReservedTime(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
 
-	@Query("select vr.endedAt as endedAt, v as vehicle " +
+	@Query("select vr.endedAt as endedAt,vr.modifiedAt as modifiedAt, v as vehicle " +
 			"from Vehicle v " +
 			"left join fetch VehicleReservation vr on v.id = vr.vehicle.id " +
-			"where endedAt is not null order by vr.modifiedAt desc")
-	List<IVehicleDateResDTO> findByRecentReservedVehicle();
+			"where vr.startedAt> :start order by vr.modifiedAt desc")
+	List<IVehicleDateResDTO> findByRecentReservedVehicle(@Param("start")LocalDateTime start);
 
 
 	@Query("select vr.id as id, vr.startedAt as startedAt, vr.endedAt as endedAt, " +
@@ -150,9 +159,9 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
 			"left join vehicle v on v.id = vr.vehicleId " +
 			"where e.id = :id and " +
 			"IF(:lastId > 0, vr.id < :lastId, 1=1)  " +
-			"order by vr.createdAt desc, vr.id asc limit 5 ", nativeQuery = true)
+			"order by vr.modifiedAt desc, vr.id asc limit 5 ", nativeQuery = true)
 	List<IVehiclePagingResDTO> findByMyReservationPaging(@Param("lastId") Long lastId, @Param("id") Long id);
-	
+
 	@Query("select distinct v.id as id, v.name as name, v.number as number, " +
 			"v.model as model, v.color as color, v.capacity as capacity " +
 			"from Vehicle v ")

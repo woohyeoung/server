@@ -14,6 +14,7 @@ import com.douzone.server.repository.querydsl.VehicleQueryDSL;
 import com.douzone.server.service.method.VehicleServiceMethod;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tomcat.jni.Local;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.douzone.server.config.utils.Msg.*;
 
@@ -148,7 +150,22 @@ public class VehicleService {
 					}
 					return v;
 				})
-				.map(v -> vehicleServiceMethod.convertToList(vehicleRepository.findByDateTimeReservation(vehicleServiceMethod.parsing(start), vehicleServiceMethod.parsing(end))))
+				.map(v -> vehicleServiceMethod.convertToList(vehicleRepository.findByDateTimeReservation(LocalDateTime.parse(start), LocalDateTime.parse(end))))
+				.map(u -> ResponseDTO.of(HttpStatus.OK, SUCCESS_VEHICLE_FIND_DATE, u))
+				.orElseGet(() -> ResponseDTO.fail(HttpStatus.BAD_REQUEST, FAIL_VEHICLE_FIND_DATE + FAIL_EXIST_RESULT));
+	}
+
+	@Transactional(readOnly = true)
+	public ResponseDTO findByDateTimeReservation2(String start, String end) {
+		log.info(METHOD_NAME + "- findByDateTimeReservation");
+		return Optional.of(new ResponseDTO())
+				.map(v -> {
+					if (start == null || start.equals("") || end == null || end.equals("")) {
+						return ResponseDTO.fail(HttpStatus.BAD_REQUEST, FAIL_VEHICLE_FIND_DATE + FAIL_REQUEST_PARAMETER);
+					}
+					return v;
+				})
+				.map(v -> vehicleRepository.findByDateTimeReservation2(LocalDateTime.parse(start), LocalDateTime.parse(end)))
 				.map(u -> ResponseDTO.of(HttpStatus.OK, SUCCESS_VEHICLE_FIND_DATE, u))
 				.orElseGet(() -> ResponseDTO.fail(HttpStatus.BAD_REQUEST, FAIL_VEHICLE_FIND_DATE + FAIL_EXIST_RESULT));
 	}
@@ -214,7 +231,7 @@ public class VehicleService {
 		LocalDateTime now = LocalDateTime.now();
 		return Optional.of(new ResponseDTO())
 				.map(v ->
-						vehicleServiceMethod.convertToWeek(vehicleRepository.weekMostReservedVehicle(now, now.minusDays(datetime))))
+						vehicleServiceMethod.convertToWeek(vehicleRepository.weekMostReservedVehicle(now.minusDays(datetime), now)))
 				.map(u -> ResponseDTO.of(HttpStatus.OK, SUCCESS_VEHICLE_BEST_WEEK, u))
 				.orElseGet(() -> ResponseDTO.fail(HttpStatus.BAD_REQUEST, FAIL_VEHICLE_BEST_WEEK + FAIL_EXIST_RESULT));
 	}
@@ -247,7 +264,7 @@ public class VehicleService {
 	public ResponseDTO findByRecentReservedVehicle() {
 		log.info(METHOD_NAME + "- findByRecentReservedVehicle");
 		return Optional.of(new ResponseDTO())
-				.map(v -> vehicleServiceMethod.convertToDate(vehicleRepository.findByRecentReservedVehicle()))
+				.map(v -> vehicleServiceMethod.convertToDate(vehicleRepository.findByRecentReservedVehicle(LocalDateTime.now()).stream().limit(3).collect(Collectors.toList())))
 				.map(u -> ResponseDTO.of(HttpStatus.OK, SUCCESS_VEHICLE_RECENT, u))
 				.orElseGet(() -> ResponseDTO.fail(HttpStatus.BAD_REQUEST, FAIL_VEHICLE_RECENT + FAIL_EXIST_RESULT));
 	}
