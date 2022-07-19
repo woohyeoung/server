@@ -1,44 +1,40 @@
-//package com.douzone.server;
-//
-//
-//import com.douzone.server.config.socket.Calendar;
-//import com.douzone.server.config.socket.Time;
-//import com.douzone.server.config.socket.TimeRepository;
-//import com.douzone.server.dto.reservation.RegistReservationReqDto;
-//import com.douzone.server.dto.vehicle.VehicleParseDTO;
-//import com.douzone.server.entity.Employee;
-//import com.douzone.server.entity.Vehicle;
-//import com.douzone.server.repository.EmployeeRepository;
-//import com.douzone.server.repository.VehicleRepository;
-//import com.douzone.server.service.EmployeeService;
-//import com.douzone.server.service.RoomService;
-//import com.douzone.server.service.VehicleService;
-//import org.junit.jupiter.api.Test;
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.boot.test.context.SpringBootTest;
-//import org.springframework.test.annotation.Rollback;
-//import org.springframework.transaction.annotation.Transactional;
-//
-//import java.time.LocalDateTime;
-//import java.time.format.DateTimeFormatter;
-//import java.util.List;
-//
-//@SpringBootTest
-//@Transactional
-//public class InputDummyTest {
-//	@Autowired
-//	EmployeeRepository employeeRepository;
-//	@Autowired
-//	EmployeeService employeeService;
-//	@Autowired
-//	RoomService roomService;
-//	@Autowired
-//	TimeRepository timeRepository;
-//	@Autowired
-//	VehicleRepository vehicleRepository;
-//	@Autowired
-//	VehicleService vehicleService;
-//
+package com.douzone.server;
+
+
+import com.douzone.server.config.socket.Calendar;
+import com.douzone.server.config.socket.Time;
+import com.douzone.server.config.socket.TimeRepository;
+import com.douzone.server.config.socket.vehicle.TimeVehicleRepository;
+import com.douzone.server.repository.EmployeeRepository;
+import com.douzone.server.repository.VehicleRepository;
+import com.douzone.server.service.EmployeeService;
+import com.douzone.server.service.RoomService;
+import com.douzone.server.service.VehicleService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.Rollback;
+import org.springframework.transaction.annotation.Transactional;
+
+@SpringBootTest
+@Transactional
+@Rollback(false)
+public class InputDummyTest {
+	@Autowired
+	EmployeeRepository employeeRepository;
+	@Autowired
+	EmployeeService employeeService;
+	@Autowired
+	RoomService roomService;
+	@Autowired
+	TimeRepository timeRepository;
+	@Autowired
+	VehicleRepository vehicleRepository;
+	@Autowired
+	VehicleService vehicleService;
+	@Autowired
+	TimeVehicleRepository timeVehicleRepository;
+
 //	/**
 //	 * 이름 바꾸기
 //	 */
@@ -87,6 +83,7 @@
 //			employeeService.bookmarkRegisterAndDelete(roomId, empList.get(i).getId());
 //		}
 //	}
+//
 //	/**
 //	 * 전사원 랜덤으로 차량 북마크 넣어주기 1번만됨
 //	 */
@@ -95,7 +92,7 @@
 //		List<Employee> empList = employeeRepository.findAll();
 //		for (int i = 0; i < empList.size(); i++) {
 //			long vehicleId = (long) (Math.random() * 10) + 1L;
-//			vehicleService.registerByVehicleBookmark(empList.get(i).getId(),vehicleId);
+//			vehicleService.registerByVehicleBookmark(empList.get(i).getId(), vehicleId);
 //		}
 //	}
 //
@@ -109,7 +106,7 @@
 //				{"11:00~12:00", "10:30~12:30"},
 //				{"13:00~14:00", "13:00~14:30"},
 //				{"15:00~16:00", "15:00~15:30"},
-//				{"16:30~17:30", "16:30~17:30"}
+//				{"16:30~17:30", "17:00~17:30"}
 //		};
 //		String[] meetings = {
 //				"승진 심사 회의 : 승진 심사를 위한 회의실 대여",
@@ -123,29 +120,30 @@
 //				"마케팅부 정기회의 : 1~4분기 분기별 마케팅 성과 검토 및 향후 기획 회의",
 //				"영업실적 검토회의 : 영업 평가 및 영업활동 개선에 대한 회의"
 //		};
-//
+//		Random r = new Random();
 //		for (int i = 1; i <= 15; i++) { //1에서 15번방
-//			String uid = "20220623";
+//			String uid = "20220700";
+//			for (int k = 1; k <= 14; k++) {
+//				uid = Integer.parseInt(uid) + 1 + "";
+//				int ranStart, ranEnd;
+//				while (true) {
+//					ranStart = r.nextInt(5);
+//					ranEnd = r.nextInt(5);
+//					if (ranStart < ranEnd) break;
+//				}
+//				for (int j = ranStart; j <= ranEnd; j++) { //5개 타임을 순서대로 선택
 //
-//				for(int k = 1 ; k <=22 ; k ++) {
-//					if ((uid.charAt(6) + "" + uid.charAt(7)).equals("30")) {
-//						uid = "20220700";
-//					}
-//					uid = Integer.parseInt(uid) + 1 + "";
+//					DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd HH:mm:ss");
+//					String time = times[j][(int) (Math.random() * 2)];//0~1
+//					String[] startEndTime = time.split("~");
+//					LocalDateTime startTime = LocalDateTime.parse(uid + " " + startEndTime[0] + ":00", formatter);
+//					LocalDateTime endTime = LocalDateTime.parse(uid + " " + startEndTime[1] + ":00", formatter);
 //
-//					for(int j = 0; j < times.length ; j++){ //5개 타임을 순서대로 선택
+//					String[] meeting = meetings[(int) (Math.random() * meetings.length)].split(" : ");
+//					RegistReservationReqDto registReservationReqDto = RegistReservationReqDto.builder()
+//							.reason(meeting[1]).title(meeting[0]).roomId(Long.valueOf(i)).empId(Long.valueOf((int) (Math.random() * 300) + 50)).startedAt(startTime).endedAt(endTime).build();
 //
-//						DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd HH:mm:ss");
-//						String time = times[j][(int) (Math.random() * 2)];//0~1
-//						String[] startEndTime  = time.split("~");
-//						LocalDateTime startTime = LocalDateTime.parse(uid+" "+startEndTime[0]+":00", formatter );
-//						LocalDateTime endTime = LocalDateTime.parse(uid+" "+startEndTime[1]+":00", formatter);
-//
-//						String[] meeting = meetings[(int)(Math.random()*meetings.length)].split(" : ");
-//						RegistReservationReqDto registReservationReqDto = RegistReservationReqDto.builder()
-//								.reason(meeting[1]).title(meeting[0]).roomId(Long.valueOf(i)).empId(Long.valueOf((int)(Math.random()*300)+50)).startedAt(startTime).endedAt(endTime).build();
-//
-//						roomService.save(registReservationReqDto);
+//					roomService.save(registReservationReqDto, 0L);
 //				}
 //
 //			}
@@ -165,7 +163,7 @@
 //		//1박2일 2박 3일 당일치기로 구분
 //		String[][] times = {
 //				{"09:00:00", "11:00:00", "13:00:00", "15:00:00", "16:30:00", "17:00:00", "18:00:00", "19:00:00", "20:30:00", "21:00:00", "22:00:00"},
-//				{"1","2","3","4","5"}
+//				{"1", "2", "3", "4", "5"}
 //		};
 //		String[] vehicles = {
 //				"전북 출장 : 더존비즈온 전북 지사 출장",
@@ -182,55 +180,54 @@
 //		List<Employee> empList = employeeRepository.findAll();
 //
 //
-//		for(int i = 1 ; i <= 10 ; i ++) {
+//		for (int i = 1; i <= 10; i++) {
 //			String uid = "20220623";
 //			int day = 22;
-//			for(int k = 1 ; k <=day ; k ++) { //7/15
+//			for (int k = 1; k <= day; k++) { //7/15
 //				String startDay = "";
 //				String endDay = "";
 //				if ((uid.charAt(6) + "" + uid.charAt(7)).equals("30")) {
 //					uid = "20220700";
 //				}
 //				uid = Integer.parseInt(uid) + 1 + "";//0624
-//				for(int j = 0; j < times.length ; j++){
+//				for (int j = 0; j < times.length; j++) {
 //					//시작시간 끝시간 며칠빌릴지 정해줍니다.
 //					String start = times[0][(int) (Math.random() * times[0].length)];
 //					String end = times[0][(int) (Math.random() * times[0].length)];
 //					int days = Integer.parseInt(times[1][(int) (Math.random() * times[1].length)]);
 //					System.out.println(days);
-//					if(Integer.parseInt((uid.charAt(6) + "" + uid.charAt(7)))+days <= 30) {
-//						startDay =( Integer.parseInt(uid)+1)+"";
+//					if (Integer.parseInt((uid.charAt(6) + "" + uid.charAt(7))) + days <= 30) {
+//						startDay = (Integer.parseInt(uid) + 1) + "";
 //
-//						endDay = (Integer.parseInt(uid) + days)+"";
-//						if(endDay.equals(startDay)){
-//							endDay = (Integer.parseInt(endDay)+1)+"";
+//						endDay = (Integer.parseInt(uid) + days) + "";
+//						if (endDay.equals(startDay)) {
+//							endDay = (Integer.parseInt(endDay) + 1) + "";
 //						}
 //						uid = endDay;
 //						day -= days;
 //
-//						String yyyy = startDay.substring(0,4);
-//						String mm = startDay.substring(4,6);
+//						String yyyy = startDay.substring(0, 4);
+//						String mm = startDay.substring(4, 6);
 //						String dd = startDay.substring(6);
 //
 //
-//						String yyyy2 = endDay.substring(0,4);
-//						String mm2 = endDay.substring(4,6);
+//						String yyyy2 = endDay.substring(0, 4);
+//						String mm2 = endDay.substring(4, 6);
 //						String dd2 = endDay.substring(6);
 //
-//						String formatUid = yyyy+"-"+ mm + "-" +dd;
-//						String formatUid2 = yyyy2+"-"+ mm2 + "-" +dd2;
+//						String formatUid = yyyy + "-" + mm + "-" + dd;
+//						String formatUid2 = yyyy2 + "-" + mm2 + "-" + dd2;
 //						System.out.println(formatUid2);
-//						String startTime = formatUid+" "+ start;
-//						String endTime = formatUid2+" " + end;
-//
+//						String startTime = formatUid + " " + start;
+//						String endTime = formatUid2 + " " + end;
 //
 //
 //						String[] vehicle = vehicles[1].split(" : ");
-//						long empId = empList.get((int)(Math.random()*300)+15).getId();
+//						long empId = empList.get((int) (Math.random() * 300) + 15).getId();
 //
 //						VehicleParseDTO vehicleParseDTO = VehicleParseDTO.builder()
 //								.vehicleId(Long.valueOf(i))
-//								.empId((int)empId)
+//								.empId((int) empId)
 //								.startedAt(startTime)
 //								.endedAt(endTime)
 //								.title(vehicle[0])
@@ -244,28 +241,51 @@
 //			}
 //		}
 //	}
-//
-//	//타임테이블에 시간넣기
+
+	//타임테이블에 시간넣기
+	@Test
+	void InputTimeTable() {
+		String[] timeTable =
+				{"9:00", "9:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30"
+						, "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30"};
+		//1번~15번 방
+		for (int i = 1; i <= +15; i++) {
+			String r = "20220715";
+			for (int j = 1; j <= 16; j++) {
+//				if ((r.charAt(6) + "" + r.charAt(7)).equals("31")) {
+//					r = "20220800";
+//				}
+				r = Integer.parseInt(r) + 1 + "";
+				for (int k = 0; k < 18; k++) {
+					timeRepository.save(Time.builder()
+							.calendar(Calendar.builder().uid(r).build())
+							.isSeat(0).time(timeTable[k]).roomId(i).build());
+				}
+			}
+		}
+	}
+
 //	@Test
-//	void InputTimeTable() {
+//	void InputVehicleTable() {
 //		String[] timeTable =
 //				{"9:00", "9:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30"
 //						, "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30"};
 //		//1번~15번 방
-//		for (int i = 1; i <= +15; i++) {
-//			String uid = "20220623";
-//			for (int j = 1; j <= 22; j++) {
-//				if ((uid.charAt(6) + "" + uid.charAt(7)).equals("30")) {
-//					uid = "20220700";
-//				}
+//		for (int i = 1; i <= 10; i++) {
+//			String uid = "20220715";
+//			for (int j = 1; j <= 16; j++) {
+////				if ((uid.charAt(6) + "" + uid.charAt(7)).equals("30")) {
+////					uid = "20220700";
+////				}
 //				uid = Integer.parseInt(uid) + 1 + "";
 //				System.out.println(uid);
 //				for (int k = 0; k < 18; k++) {
-//					timeRepository.save(Time.builder()
-//									.calendar(Calendar.builder().uid(uid).build())
-//									.isSeat(0).time(timeTable[k]).roomId(i).build());
+//					timeVehicleRepository.save(TimeVehicle.builder()
+//							.calendar(Calendar.builder().uid(uid).build())
+//							.isSeat(0).time(timeTable[k]).vehicleId((long) i).build());
 //				}
 //			}
 //		}
 //	}
-//}
+
+}
